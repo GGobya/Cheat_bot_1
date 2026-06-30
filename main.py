@@ -53,6 +53,20 @@ async def cmd_settime(message: Message):
     await message.answer(f"Готово. Теперь чит будет приходить около {hour}:00.")
 
 
+@dp.message(Command("testday"))
+async def cmd_testday(message: Message):
+    """Тестовая команда: шлёт следующий чит сразу, не дожидаясь 9:00."""
+    user = await db.get_user(message.from_user.id)
+    if not user:
+        await db.create_user(message.from_user.id, message.from_user.username or "")
+        user = await db.get_user(message.from_user.id)
+
+    next_day = user["current_day"] + 1
+    if next_day > TOTAL_DAYS:
+        next_day = ((next_day - 1) % TOTAL_DAYS) + 1
+    await send_day(message.from_user.id, next_day)
+
+
 @dp.message(Command("status"))
 async def cmd_status(message: Message):
     user = await db.get_user(message.from_user.id)
