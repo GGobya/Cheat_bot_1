@@ -167,6 +167,9 @@ async def scheduler_loop():
 
 async def main():
     await db.init_db()
+    # на случай, если ранее был включён webhook — снимаем его,
+    # иначе getUpdates (polling) будет конфликтовать с Telegram
+    await bot.delete_webhook(drop_pending_updates=True)
     asyncio.create_task(scheduler_loop())
     await dp.start_polling(bot)
 
