@@ -157,6 +157,7 @@ async def send_stats(target: Message):
         f"👥 Всего пользователей: {s['total_users']}\n"
         f"✅ Активных (не остановили бот): {s['active_users']}\n"
         f"🟢 Хоть раз тыкали за 7 дней: {s['active_7d']}\n"
+        f"🆕 Новых за 7 дней: {s['new_7d']}\n"
         f"📤 Сообщений отправлено ботом: {s['total_sent']}\n"
         f"📥 Сообщений получено от юзеров: {s['total_received']}\n"
         f"✓ Всего выполнений читов: {s['total_done']}\n"
@@ -273,6 +274,13 @@ async def cmd_stats(message: Message):
 async def cmd_users(message: Message):
     if not is_admin(message.from_user.id): return
     await send_users(message)
+
+
+@dp.message(Command("debug"))
+async def cmd_debug(message: Message):
+    if not is_admin(message.from_user.id): return
+    info = await db.debug_info()
+    await message.answer(f"🔧 Диагностика\n\n{info}")
 
 
 @dp.message(Command("export"))
