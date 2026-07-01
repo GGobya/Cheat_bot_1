@@ -197,6 +197,13 @@ async def get_stats() -> dict:
             (since,)
         )).fetchone())
 
+        # Новые пользователи за 7 дней (started_at — дата, sqlite сравнивает строки корректно для ISO)
+        since_date = (date.today() - timedelta(days=7)).isoformat()
+        new_7d = val(await (await db.execute(
+            "SELECT COUNT(*) FROM users WHERE started_at >= ?",
+            (since_date,)
+        )).fetchone())
+
         # По каждому пользователю: последняя активность за 7 дней
         cur = await db.execute("""
             SELECT u.user_id, u.username, u.first_name,
@@ -229,9 +236,41 @@ async def get_stats() -> dict:
             "total_done":     total_done,
             "total_failed":   total_failed,
             "active_7d":      active_7d,
+            "new_7d":         new_7d,
             "daily_activity": daily_activity,
             "per_user":       per_user,
         }
+
+
+async def debug_info() -> str:
+    """Диагностика: путь к БД и количество строк в таблицах."""
+    import os
+    lines = [f"DB_PATH: {DB_PATH}"]
+    lines.append(f"Файл существует: {os.path.exists(DB_PATH)}")
+    if os.path.exists(DB_PATH):
+        lines.append(f"Размер файла: {os.path.getsize(DB_PATH)} байт")
+    async with aiosqlite.connect(DB_PATH) as db:
+        for table in ("users", "responses", "message_log"):
+            try:
+                cur = await db.execute(f"SELECT COUNT(*) FROM {table}")
+                cnt = (await cur.fetchone())[0]
+                lines.append(f"{table}: {cnt} строк")
+            except Exception as e:
+                lines.append(f"{table}: ошибка — {e}")
+        # последние 5 записей лога
+        try:
+            db.row_factory = aiosqlite.Row
+            cur = await db.execute(
+                "SELECT username, direction, message_type, created_at FROM message_log ORDER BY id DESC LIMIT 5"
+            )
+            rows = await cur.fetchall()
+            if rows:
+                lines.append("\nПоследние записи лога:")
+                for r in rows:
+                    lines.append(f"  @{r['username']} {r['direction']}/{r['message_type']} {r['created_at']}")
+        except Exception as e:
+            lines.append(f"log preview error: {e}")
+    return "\n".join(lines)
 
 
 async def export_csv() -> bytes:
