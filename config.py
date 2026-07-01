@@ -1,17 +1,15 @@
 import os
 
-# Токен бота берём из переменной окружения.
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
 
-DB_PATH = os.getenv("DB_PATH", "bcheat.db")
+# Абсолютный путь к БД — чтобы файл всегда создавался в одном месте
+# независимо от рабочей директории при запуске
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.getenv("DB_PATH", os.path.join(_BASE_DIR, "bcheat.db"))
 
-# Время по умолчанию, в которое пользователь получает ежедневный чит (час, 0-23)
-DEFAULT_SEND_HOUR = 9
-
-# Сколько дней длится эксперимент
+DEFAULT_SEND_HOUR = 6
 TOTAL_DAYS = 30
 
-# Telegram user_id администратора — только он может делать рассылку и видеть статистику.
-# Узнать свой ID: написать @userinfobot в Telegram.
-# Задать: export ADMIN_ID=123456789
+# Твой Telegram user_id. Узнать: написать @userinfobot в Telegram.
+# Задать на bothost: переменная окружения ADMIN_ID=123456789
 ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
